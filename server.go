@@ -170,3 +170,22 @@ func balance(c *gin.Context) {
 		"accounts": response.Accounts,
 	})
 }
+
+func item(c *gin.Context) {
+	response, err := client.GetItem(accessToken)
+	if err != nil {
+		renderError(c, err)
+		return
+	}
+
+	institution, err := client.GetInstitutionByID(response.Item.InstitutionID)
+	if err != nil {
+		renderError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"item":        response.Item,
+		"institution": institution.Institution,
+	})
+}
