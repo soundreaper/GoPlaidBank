@@ -279,3 +279,21 @@ func createPublicToken(c *gin.Context) {
 		"public_token": publicToken,
 	})
 }
+
+func createLinkToken(c *gin.Context) {
+	linkToken, err := linkTokenCreate(nil)
+	if err != nil {
+		renderError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"link_token": linkToken})
+}
+
+type httpError struct {
+	errorCode int
+	error     string
+}
+
+func (httpError *httpError) Error() string {
+	return httpError.error
+}
