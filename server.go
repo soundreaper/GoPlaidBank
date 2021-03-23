@@ -297,3 +297,34 @@ type httpError struct {
 func (httpError *httpError) Error() string {
 	return httpError.error
 }
+
+func linkTokenCreate(
+	paymentInitiation *plaid.PaymentInitiation,
+) (string, *httpError) {
+	countryCodes := strings.Split(PLAID_COUNTRY_CODES, ",")
+	products := strings.Split(PLAID_PRODUCTS, ",")
+	redirectURI := PLAID_REDIRECT_URI
+	configs := plaid.LinkTokenConfigs{
+		User: &plaid.LinkTokenUser{
+			ClientUserID: "user-id",
+		},
+		ClientName:        "Plaid Quickstart",
+		Products:          products,
+		CountryCodes:      countryCodes,
+		Language:          "en",
+		RedirectUri:       redirectURI,
+		PaymentInitiation: paymentInitiation,
+	}
+	resp, err := client.CreateLinkToken(configs)
+	if err != nil {
+		return "", &httpError{
+			errorCode: http.StatusBadRequest,
+			error:     err.Error(),
+		}
+	}
+	return resp.LinkToken, nil
+}
+
+func assets(c *gin.Context) {
+	c.JSON(http.StatusBadRequest, gin.H{"error": "unfortunately the go client library does not support assets report creation yet."})
+}
