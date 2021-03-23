@@ -74,6 +74,33 @@ func init() {
 	}
 }
 
+func main() {
+	r := gin.Default()
+
+	r.POST("/api/info", info)
+
+	r.POST("/api/set_access_token", getAccessToken)
+	r.GET("/api/auth", auth)
+	r.GET("/api/accounts", accounts)
+	r.GET("/api/balance", balance)
+	r.GET("/api/item", item)
+	r.POST("/api/item", item)
+	r.GET("/api/identity", identity)
+	r.GET("/api/transactions", transactions)
+	r.POST("/api/transactions", transactions)
+	r.GET("/api/payment", payment)
+	r.GET("/api/create_public_token", createPublicToken)
+	r.POST("/api/create_link_token", createLinkToken)
+	r.GET("/api/investment_transactions", investmentTransactions)
+	r.GET("/api/holdings", holdings)
+	r.GET("/api/assets", assets)
+
+	err := r.Run(":" + APP_PORT)
+	if err != nil {
+		panic("unable to start server")
+	}
+}
+
 var accessToken string
 var itemID string
 
@@ -81,7 +108,6 @@ var paymentID string
 
 func renderError(c *gin.Context, err error) {
 	if plaidError, ok := err.(plaid.Error); ok {
-		// Return 200 and allow the front end to render the error.
 		c.JSON(http.StatusOK, gin.H{"error": plaidError})
 		return
 	}
@@ -108,30 +134,27 @@ func getAccessToken(c *gin.Context) {
 	})
 }
 
-func main() {
-	r := gin.Default()
-
-	r.POST("/api/info", info)
-
-	r.POST("/api/set_access_token", getAccessToken)
-	r.POST("/api/create_link_token_for_payment", createLinkTokenForPayment)
-	r.GET("/api/auth", auth)
-	r.GET("/api/accounts", accounts)
-	r.GET("/api/balance", balance)
-	r.GET("/api/item", item)
-	r.POST("/api/item", item)
-	r.GET("/api/identity", identity)
-	r.GET("/api/transactions", transactions)
-	r.POST("/api/transactions", transactions)
-	r.GET("/api/payment", payment)
-	r.GET("/api/create_public_token", createPublicToken)
-	r.POST("/api/create_link_token", createLinkToken)
-	r.GET("/api/investment_transactions", investmentTransactions)
-	r.GET("/api/holdings", holdings)
-	r.GET("/api/assets", assets)
-
-	err := r.Run(":" + APP_PORT)
+func auth(c *gin.Context) {
+	response, err := client.GetAuth(accessToken)
 	if err != nil {
-		panic("unable to start server")
+		renderError(c, err)
+		return
 	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"accounts": response.Accounts,
+		"numbers":  response.Numbers,
+	})
+}
+
+func accounts(c *gin.Context) {
+	response, err := client.GetAccounts(accessToken)
+	if err != nil {
+		renderError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"accounts": response.Accounts,
+	})
 }
