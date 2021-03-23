@@ -204,7 +204,6 @@ func identity(c *gin.Context) {
 }
 
 func transactions(c *gin.Context) {
-	// pull transactions for the past 30 days
 	endDate := time.Now().Local().Format("2006-01-02")
 	startDate := time.Now().Local().Add(-30 * 24 * time.Hour).Format("2006-01-02")
 
@@ -218,5 +217,44 @@ func transactions(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"accounts":     response.Accounts,
 		"transactions": response.Transactions,
+	})
+}
+
+func payment(c *gin.Context) {
+	response, err := client.GetPayment(paymentID)
+	if err != nil {
+		renderError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"payment": response.Payment,
+	})
+}
+
+func investmentTransactions(c *gin.Context) {
+	endDate := time.Now().Local().Format("2006-01-02")
+	startDate := time.Now().Local().Add(-30 * 24 * time.Hour).Format("2006-01-02")
+	response, err := client.GetInvestmentTransactions(accessToken, startDate, endDate)
+	fmt.Println("error", err)
+	if err != nil {
+		renderError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"investment_transactions": response,
+	})
+}
+
+func holdings(c *gin.Context) {
+	response, err := client.GetHoldings(accessToken)
+	if err != nil {
+		renderError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"holdings": response,
 	})
 }
