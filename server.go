@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -256,5 +257,25 @@ func holdings(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"holdings": response,
+	})
+}
+
+func info(context *gin.Context) {
+	context.JSON(200, map[string]interface{}{
+		"item_id":      itemID,
+		"access_token": accessToken,
+		"products":     strings.Split(PLAID_PRODUCTS, ","),
+	})
+}
+
+func createPublicToken(c *gin.Context) {
+	publicToken, err := client.CreatePublicToken(accessToken)
+	if err != nil {
+		renderError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"public_token": publicToken,
 	})
 }
