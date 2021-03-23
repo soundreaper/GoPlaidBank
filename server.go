@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -187,5 +188,35 @@ func item(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"item":        response.Item,
 		"institution": institution.Institution,
+	})
+}
+
+func identity(c *gin.Context) {
+	response, err := client.GetIdentity(accessToken)
+	if err != nil {
+		renderError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"identity": response.Accounts,
+	})
+}
+
+func transactions(c *gin.Context) {
+	// pull transactions for the past 30 days
+	endDate := time.Now().Local().Format("2006-01-02")
+	startDate := time.Now().Local().Add(-30 * 24 * time.Hour).Format("2006-01-02")
+
+	response, err := client.GetTransactions(accessToken, startDate, endDate)
+
+	if err != nil {
+		renderError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"accounts":     response.Accounts,
+		"transactions": response.Transactions,
 	})
 }
