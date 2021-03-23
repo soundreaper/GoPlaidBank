@@ -158,3 +158,15 @@ func accounts(c *gin.Context) {
 		"accounts": response.Accounts,
 	})
 }
+
+func balance(c *gin.Context) {
+	response, err := client.GetBalances(accessToken)
+	if err != nil {
+		renderError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"accounts": response.Accounts,
+	})
+}
