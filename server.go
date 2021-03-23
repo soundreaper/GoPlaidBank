@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"net/http"
 	"os"
 
 	"github.com/gin-gonic/gin"
@@ -41,14 +43,95 @@ func init() {
 	PLAID_COUNTRY_CODES = os.Getenv("PLAID_COUNTRY_CODES")
 	PLAID_REDIRECT_URI = os.Getenv("PLAID_REDIRECT_URI")
 	APP_PORT = os.Getenv("APP_PORT")
+
+	if PLAID_PRODUCTS == "" {
+		PLAID_PRODUCTS = "transactions"
+	}
+	if PLAID_COUNTRY_CODES == "" {
+		PLAID_COUNTRY_CODES = "US"
+	}
+	if PLAID_ENV == "" {
+		PLAID_ENV = "sandbox"
+	}
+	if APP_PORT == "" {
+		APP_PORT = "8000"
+	}
+	if PLAID_CLIENT_ID == "" {
+		log.Fatal("PLAID_CLIENT_ID is not set. Make sure to fill out the .env file")
+	}
+	if PLAID_SECRET == "" {
+		log.Fatal("PLAID_SECRET is not set. Make sure to fill out the .env file")
+	}
+
+	client, err = plaid.NewClient(plaid.ClientOptions{
+		PLAID_CLIENT_ID,
+		PLAID_SECRET,
+		environments[PLAID_ENV],
+		&http.Client{},
+	})
+	if err != nil {
+		panic(fmt.Errorf("unexpected error while initializing plaid client %w", err))
+	}
+}
+
+var accessToken string
+var itemID string
+
+var paymentID string
+
+func renderError(c *gin.Context, err error) {
+	if plaidError, ok := err.(plaid.Error); ok {
+		// Return 200 and allow the front end to render the error.
+		c.JSON(http.StatusOK, gin.H{"error": plaidError})
+		return
+	}
+	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+}
+
+func getAccessToken(c *gin.Context) {
+	publicToken := c.PostForm("public_token")
+	response, err := client.ExchangePublicToken(publicToken)
+	if err != nil {
+		renderError(c, err)
+		return
+	}
+	accessToken = response.AccessToken
+	itemID = response.ItemID
+
+	fmt.Println("public token: " + publicToken)
+	fmt.Println("access token: " + accessToken)
+	fmt.Println("item ID: " + itemID)
+
+	c.JSON(http.StatusOK, gin.H{
+		"access_token": accessToken,
+		"item_id":      itemID,
+	})
 }
 
 func main() {
 	r := gin.Default()
-	r.GET("/ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "pong",
-		})
-	})
-	r.Run()
+
+	r.POST("/api/info", info)
+
+	r.POST("/api/set_access_token", getAccessToken)
+	r.POST("/api/create_link_token_for_payment", createLinkTokenForPayment)
+	r.GET("/api/auth", auth)
+	r.GET("/api/accounts", accounts)
+	r.GET("/api/balance", balance)
+	r.GET("/api/item", item)
+	r.POST("/api/item", item)
+	r.GET("/api/identity", identity)
+	r.GET("/api/transactions", transactions)
+	r.POST("/api/transactions", transactions)
+	r.GET("/api/payment", payment)
+	r.GET("/api/create_public_token", createPublicToken)
+	r.POST("/api/create_link_token", createLinkToken)
+	r.GET("/api/investment_transactions", investmentTransactions)
+	r.GET("/api/holdings", holdings)
+	r.GET("/api/assets", assets)
+
+	err := r.Run(":" + APP_PORT)
+	if err != nil {
+		panic("unable to start server")
+	}
 }
