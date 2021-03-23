@@ -7,6 +7,8 @@ Go Plaid Bank is a banking application that utilizes Golang, the Plaid API, and 
  - [Plaid](https://plaid.com/)
  - [Gin Web Framework](https://github.com/gin-gonic/gin)
 
+The frontend is from Plaid and their start-up guide. It is written in React and I modified it to my own needs.
+
 ## How to Install?
 ### Step 1:
 Clone this repository.
